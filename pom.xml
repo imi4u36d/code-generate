@@ -8,8 +8,6 @@
     <packaging>maven-plugin</packaging>
 
     <name>code-generate Maven Plugin</name>
-
-    <!-- FIXME change it to the project's website -->
     <url>http://nowrk.fun</url>
 
     <properties>
