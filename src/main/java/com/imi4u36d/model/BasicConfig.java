@@ -22,5 +22,10 @@ public class BasicConfig {
      * 是否开启强制覆盖
      */
     private Boolean overWriteEnable;
+
+    /**
+     * 自定义ftl文件模版
+     */
+    private String ftlFileDirConfig;
 }
 

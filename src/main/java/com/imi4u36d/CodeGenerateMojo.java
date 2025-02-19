@@ -39,6 +39,7 @@ public class CodeGenerateMojo extends AbstractMojo {
             List<Map<String, String>> tables = (List<Map<String, String>>) obj.get("tables");
             Map<String, Boolean> swaggerConfig = (Map<String, Boolean>) obj.get("swaggerConfig");
             Map<String, Object> outputConfig = (Map<String, Object>) obj.get("outputConfig");
+            String ftlFileDirConfig = (String) obj.get("ftlFileDir");
 
             // 基本信息
             //是否开启swagger注解
@@ -83,7 +84,10 @@ public class CodeGenerateMojo extends AbstractMojo {
             dbConfiguration.setTableNames(tableNames);
 
             BasicConfig basicConfig = new BasicConfig().toBuilder()
-                    .swaggerEnable(swaggerEnable).overWriteEnable(overwriteEnable).build();
+                    .swaggerEnable(swaggerEnable)
+                    .overWriteEnable(overwriteEnable)
+                    .ftlFileDirConfig(ftlFileDirConfig)
+                    .build();
 
             //配置数据库配置
             configDB(dbConfiguration);
