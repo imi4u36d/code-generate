@@ -28,7 +28,17 @@ swaggerConfig:
   swaggerEnable: false
 
 outputConfig:
-  baseOutputDir: /Users/wangzhuo/Downloads/code
+  baseOutputDir: /Users/wangzhuo/Downloads/code #请使用绝对路径
   authorInfo: wz
   packageUrl: com.imi4u36d
   overwriteEnable: true
+
+ftlFileDir: /Users/wangzhuo/Downloads/ftl #请使用绝对路径
+```
+
+## 版本备注
+- swagger - swagger3
+- jdk - DK1.8
+- mysql- mysql8.0
+- freemarker - freemarker2.3.31
+- maven - maven3.x
