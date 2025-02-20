@@ -3,6 +3,9 @@ package com.imi4u36d.model;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * @author wangzhuo
+ */
 @Data
 @Builder
 public class ColumnInfo {
