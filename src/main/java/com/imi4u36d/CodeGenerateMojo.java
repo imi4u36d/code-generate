@@ -108,14 +108,13 @@ public class CodeGenerateMojo extends AbstractMojo {
 
 
             //全部生成
-            Arrays.stream(FileType.values()).forEach(fileType -> {
-                tableInfoList.forEach((tableName, info) -> FreemarkerUtils.ftlToFile(basicConfig, info, fileType, outputDir));
-            });
+            Arrays.stream(FileType.values())
+                    .forEach(fileType ->
+                            tableInfoList.forEach((tableName, info) ->
+                                    FreemarkerUtils.ftlToFile(basicConfig, info, fileType, outputDir)));
 
             //关闭连接-结束程序
             DBUtils.closeConnection();
-
-
         } catch (Exception e) {
             throw new MojoExecutionException("Error executing plugin", e);
         }
