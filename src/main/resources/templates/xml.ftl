@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="${mapperUrl}.${entityName}Mapper">
 
-    <resultMap type="${entityName}" id="${entityName}Result">
+    <resultMap type="${entityUrl}.${entityName}" id="${entityName}Result">
         <#list columnInfos as col>
             <result property="${col.columnName}"   column="${col.javaName}" />
         </#list>
@@ -40,7 +40,7 @@
         where id = <#noparse>#</#noparse>{id}
     </select>
 
-    <insert id="add" parameterType="${entityName}">
+    <insert id="add" parameterType="${entityUrl}.${entityName}">
         insert into ${tableName}
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <#list columnInfos as col>
@@ -54,7 +54,7 @@
         </trim>
     </insert>
 
-    <update id="update" parameterType="${entityName}">
+    <update id="update" parameterType="${entityUrl}.${entityName}">
         update ${tableName}
         <trim prefix="SET" suffixOverrides=",">
             <#list columnInfos as col>
@@ -75,7 +75,7 @@
         </foreach>
     </delete>
 
-    <select id="total" parameterType="${entityName}" resultType="Integer">
+    <select id="total" parameterType="${entityUrl}.${entityName}" resultType="Integer">
         select count(*) from ${tableName}
         <where>
             <#list columnInfos as col>
