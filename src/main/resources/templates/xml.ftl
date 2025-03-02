@@ -20,7 +20,7 @@
         <include refid="sel${entityStartByLowCase}Vo"/>
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
         order by id desc
@@ -30,7 +30,7 @@
         select count(*) from ${tableName}
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
     </select>
@@ -79,7 +79,7 @@
         select count(*) from ${tableName}
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
     </select>
