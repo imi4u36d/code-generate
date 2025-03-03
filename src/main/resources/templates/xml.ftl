@@ -2,25 +2,25 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="${mapperUrl}.${entityName}Mapper">
 
-    <resultMap type="${entityName}" id="${entityName}Result">
+    <resultMap type="${entityUrl}.${entityName}" id="${entityName}Result">
         <#list columnInfos as col>
-            <result property="${col.columnName}"   column="${col.javaName}" />
+            <result column="${col.columnName}"   property="${col.javaName}" />
         </#list>
     </resultMap>
 
     <sql id="sel${entityStartByLowCase}Vo">
-        select
         <#list columnInfos as col>
             ${col.columnName}<#if col_has_next>,</#if>
         </#list>
-        from ${tableName}
     </sql>
 
-    <select id="list" parameterType="${entityName}" resultMap="${entityName}Result">
+    <select id="list" parameterType="${entityUrl}.${entityName}" resultMap="${entityName}Result">
+        select
         <include refid="sel${entityStartByLowCase}Vo"/>
+        from ${tableName}
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
         order by id desc
@@ -30,7 +30,7 @@
         select count(*) from ${tableName}
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
     </select>
@@ -40,7 +40,7 @@
         where id = <#noparse>#</#noparse>{id}
     </select>
 
-    <insert id="add" parameterType="${entityName}">
+    <insert id="add" parameterType="${entityUrl}.${entityName}">
         insert into ${tableName}
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <#list columnInfos as col>
@@ -54,7 +54,7 @@
         </trim>
     </insert>
 
-    <update id="update" parameterType="${entityName}">
+    <update id="update" parameterType="${entityUrl}.${entityName}">
         update ${tableName}
         <trim prefix="SET" suffixOverrides=",">
             <#list columnInfos as col>
@@ -75,11 +75,11 @@
         </foreach>
     </delete>
 
-    <select id="total" parameterType="${entityName}" resultType="Integer">
+    <select id="total" parameterType="${entityUrl}.${entityName}" resultType="Integer">
         select count(*) from ${tableName}
         <where>
             <#list columnInfos as col>
-                <if test="${col.javaName} != null  and ${col.javaName} != ''"> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
+                <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
             </#list>
         </where>
     </select>

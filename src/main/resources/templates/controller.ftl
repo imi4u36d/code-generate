@@ -60,7 +60,7 @@ public class ${entityName}Controller {
     @GetMapping("/selById/{id}")
     public BaseResponseDto<${entityName}Dto> selById(<#if swaggerEnable == true>@ApiParam(name = "id", value = "需要查询数据的id")</#if> @PathVariable Long id) {
         ${entityName} ${entityStartByLowCase} = ${entityStartByLowCase}Service.selById(id);
-        if (Objects.nonNull(mArticle)){
+        if (Objects.nonNull(${entityStartByLowCase})){
             return Result.success("查询成功",${entityStartByLowCase}.toDto());
         }
         return Result.fail("记录不存在");

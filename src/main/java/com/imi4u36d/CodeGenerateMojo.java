@@ -111,7 +111,7 @@ public class CodeGenerateMojo extends AbstractMojo {
             Arrays.stream(FileType.values())
                     .forEach(fileType ->
                             tableInfoList.forEach((tableName, info) ->
-                                    FreemarkerUtils.ftlToFile(basicConfig, info, fileType, outputDir)));
+                                    FreemarkerUtils.ftlToFile(basicConfig, info, fileType, outputDir + File.separator + tableName)));
 
             //关闭连接-结束程序
             DBUtils.closeConnection();

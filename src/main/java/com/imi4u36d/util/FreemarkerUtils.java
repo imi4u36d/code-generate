@@ -1,6 +1,5 @@
 package com.imi4u36d.util;
 
-
 import com.imi4u36d.model.BaseResModel;
 import com.imi4u36d.model.BasicConfig;
 import com.imi4u36d.model.BasicInfo;
@@ -22,49 +21,23 @@ public class FreemarkerUtils {
     private static final Logger logger = LoggerFactory.getLogger(FreemarkerUtils.class);
 
     public static void ftlToFile(BasicConfig basicConfig, BasicInfo basicInfo, FileType fileType, String outputDir) {
-        if (fileType.equals(FileType.CONTROLLER)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "Controller.java", "controller.ftl");
-        } else if (fileType.equals(FileType.ENTITY)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + ".java", "entity.ftl");
-        } else if (fileType.equals(FileType.SERVICE)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "Service.java", "service.ftl");
-        } else if (fileType.equals(FileType.IMPL)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "ServiceImpl.java", "impl.ftl");
-        } else if (fileType.equals(FileType.MAPPER)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "Mapper.java", "mapper.ftl");
-        } else if (fileType.equals(FileType.XML)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "Mapper.xml", "xml.ftl");
-        } else if (fileType.equals(FileType.DTO)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + basicInfo.getEntityName() + "Dto.java", "dto.ftl");
-        } else if (fileType.equals(FileType.BASERESDTO)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + "BaseResponseDto.java", "baseResponseDto.ftl");
-        } else if (fileType.equals(FileType.RES)) {
-            createFile(basicConfig, basicInfo, outputDir + File.separator + "Result.java", "result.ftl");
-        }
+        String ftlName = fileType.getFtlName();
+        String fileName = getFileName(basicInfo, fileType, outputDir);
+        createFile(basicConfig, basicInfo, fileName, ftlName);
+    }
+
+    private static String getFileName(BasicInfo basicInfo, FileType fileType, String outputDir) {
+        String extensionName = fileType.getExtension();
+        String packageName = fileType.getPackageName();
+        return outputDir + File.separator + packageName + File.separator + basicInfo.getEntityName() + extensionName;
     }
 
     private static BaseResModel createFile(BasicConfig basicConfig, BasicInfo basicInfo, String fileName, String ftlName) {
         BaseResModel resModel = new BaseResModel();
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
-        if (basicConfig.getFtlFileDirConfig() != null) {
-            try {
-                String ftlFileDirConfig = basicConfig.getFtlFileDirConfig();
-                configuration.setDirectoryForTemplateLoading(new File(ftlFileDirConfig));
-                // 从当前绝对路径下进行寻找，如果找的到就使用，否则退回默认配置
-                String path = basicConfig.getFtlFileDirConfig() + File.separator + ftlName;
-                File file = new File(path);
-                if (!file.exists()) {
-                    // 文件不存在
-                    logger.info("{}下未找到自定义{}，开始使用默认ftl生成", basicConfig.getFtlFileDirConfig(), ftlName);
-                    configuration.setClassForTemplateLoading(FreemarkerUtils.class, "/templates");
-                }
-            } catch (IOException e) {
-                logger.error("加载自定义ftl配置失败", e);
-                throw new RuntimeException(e);
-            }
-        } else {
-            configuration.setClassForTemplateLoading(FreemarkerUtils.class, "/templates");
-        }
+
+        choseFtlMode(basicConfig, ftlName, configuration);
+
         Template template;
         try {
             template = configuration.getTemplate(ftlName);
@@ -76,26 +49,43 @@ public class FreemarkerUtils {
                 file.createNewFile();
             } else {
                 if (basicConfig.getOverWriteEnable()) {
-                    // 删除当前文件
                     file.delete();
                     file.createNewFile();
                 } else {
                     resModel.setCode(1001);
                     resModel.setContent("文件已存在！");
-                    logger.info("文件已存在！ " + file.getAbsolutePath());
+                    logger.info("文件已存在！ {}", file.getAbsolutePath());
                     return resModel;
                 }
             }
-            // 创建输出流
-            FileWriter out = new FileWriter(file);
-            // 生成文件
-            template.process(basicInfo, out);
-            logger.info("success ==> {}", fileName);
-
+            try (FileWriter out = new FileWriter(file)) {
+                template.process(basicInfo, out);
+            }
+            logger.info("生成文件成功: {}", fileName);
         } catch (IOException | TemplateException e) {
+            logger.error("生成文件失败", e);
             throw new RuntimeException(e);
         }
         return resModel;
     }
 
+    private static void choseFtlMode(BasicConfig basicConfig, String ftlName, Configuration configuration) {
+        if (basicConfig.getFtlFileDirConfig() != null) {
+            try {
+                String ftlFileDirConfig = basicConfig.getFtlFileDirConfig();
+                configuration.setDirectoryForTemplateLoading(new File(ftlFileDirConfig));
+                String path = ftlFileDirConfig + File.separator + ftlName;
+                File file = new File(path);
+                if (!file.exists()) {
+                    logger.info("自定义模板路径 {} 下未找到文件 {}，将使用默认模板", ftlFileDirConfig, ftlName);
+                    configuration.setClassForTemplateLoading(FreemarkerUtils.class, "/templates");
+                }
+            } catch (IOException e) {
+                logger.error("加载自定义模板配置失败", e);
+                throw new RuntimeException(e);
+            }
+        } else {
+            configuration.setClassForTemplateLoading(FreemarkerUtils.class, "/templates");
+        }
+    }
 }
