@@ -2,43 +2,52 @@ package com.imi4u36d.model;
 
 import lombok.Getter;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * @author wangzhuo
  */
 
 @Getter
 public enum ColumnType {
-
     INT("Integer", ""),
     BIGINT("Long", ""),
+    SMALLINT("Integer", ""),
+    MEDIUMINT("Integer", ""),
     VARCHAR("String", ""),
+    CHAR("String", ""),
     TEXT("String", ""),
     MEDIUMTEXT("String", ""),
-    BINARY("byte[]", ""),
     LONGTEXT("String", ""),
-    DATETIME("LocalDateTime", "java.time.LocalDateTime"),
-    DATE("Date", "java.sql.Date"),
-    TIME("TIME", "java.sql.Time"),
+    BINARY("byte[]", ""),
+    ENUM("String", ""),
+    SET("String", ""),
+    DATETIME("Date", "java.util.Date"),
+    DATE("Date", "java.util.Date"),
+    TIME("LocalTime", "java.time.LocalTime"),
     TIMESTAMP("Timestamp", "java.sql.Timestamp"),
     FLOAT("Float", ""),
-    BIT("Integer", ""),
-    TINYINT("Integer", ""),
-    DECIMAL("BigDecimal", "java.math.BigDecimal");
-
+    DOUBLE("Double", ""),
+    DOUBLE_PRECISION("Double", ""),
+    BIT("Boolean", ""),
+    TINYINT("Boolean", ""),
+    BOOLEAN("Boolean", ""),
+    BOOL("Boolean", ""),
+    YEAR("Integer", ""),
+    DECIMAL("BigDecimal", "java.math.BigDecimal"),
+    NUMERIC("BigDecimal", "java.math.BigDecimal"),
+    JSON("String", ""),
+    GEOMETRY("String", ""),
+    POINT("String", ""),
+    LINESTRING("String", ""),
+    POLYGON("String", ""),
+    BLOB("byte[]", ""),
+    MEDIUMBLOB("byte[]", ""),
+    LONGBLOB("byte[]", "");
 
     private final String fieldType;
-
     private final String packageName;
 
     ColumnType(String fieldType, String packageName) {
         this.fieldType = fieldType;
         this.packageName = packageName;
-    }
-
-    public static List<ColumnType> getColumnTypeList() {
-        return Arrays.asList(ColumnType.values());
     }
 }
