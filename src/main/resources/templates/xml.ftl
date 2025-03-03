@@ -4,20 +4,20 @@
 
     <resultMap type="${entityUrl}.${entityName}" id="${entityName}Result">
         <#list columnInfos as col>
-            <result property="${col.columnName}"   column="${col.javaName}" />
+            <result column="${col.columnName}"   property="${col.javaName}" />
         </#list>
     </resultMap>
 
     <sql id="sel${entityStartByLowCase}Vo">
-        select
         <#list columnInfos as col>
             ${col.columnName}<#if col_has_next>,</#if>
         </#list>
-        from ${tableName}
     </sql>
 
-    <select id="list" parameterType="${entityName}" resultMap="${entityName}Result">
+    <select id="list" parameterType="${entityUrl}.${entityName}" resultMap="${entityName}Result">
+        select
         <include refid="sel${entityStartByLowCase}Vo"/>
+        from ${tableName}
         <where>
             <#list columnInfos as col>
                 <if test="${col.javaName} != null> and ${col.columnName} = <#noparse>#</#noparse>{${col.javaName}}</if>
