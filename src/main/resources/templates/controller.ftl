@@ -8,7 +8,12 @@ import ${dtoUrl}.${entityName}Dto;
 import ${serviceUrl}.${entityName}Service;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
+<#-- 自定义返回对象 -->
+<#if customProperties.returnObject??>
+import ${customProperties.returnObject.packagePath};
+<#else>
 import com.miaomiao.miaomiaoservice.utils.Result;
+</#if>
 <#if swaggerEnable == true>
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
@@ -21,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * @说明: ${tableComment}相关接口
- * @作者: ${author} powered By 妙妙
+ * @作者: ${author}
  * @创建时间: ${curTime}
  */
 @RestController
@@ -44,8 +49,9 @@ public class ${entityName}Controller {
     @ApiOperation("查询列表")
     </#if>
     @PostMapping("/list")
-    public BaseResponseDto<List<${entityName}Dto>> list(@RequestBody @Nullable ${entityName} ${entityStartByLowCase}) {
-        List<${entityName}> list = ${entityStartByLowCase}Service.list(${entityStartByLowCase});
+    public BaseResponseDto<List<${entityName}Dto>> list(@RequestBody @Nullable ${entityName}Dto ${entityStartByLowCase}) {
+        <#-- 使用DTO作为请求对象 -->
+        List<${entityName}> list = ${entityStartByLowCase}Service.list(<#if ${entityStartByLowCase}??>${entityStartByLowCase}.toEntity()<#else>null</#if>);
         List<${entityName}Dto> resList = list.stream().map(${entityName}::toDto).collect(Collectors.toList());
         return Result.success("查询成功", resList);
     }
@@ -73,8 +79,9 @@ public class ${entityName}Controller {
     @ApiOperation("新增")
     </#if>
     @PostMapping("/add")
-    public BaseResponseDto<String> add(@RequestBody ${entityName} ${entityStartByLowCase}) {
-        Integer res = ${entityStartByLowCase}Service.add(${entityStartByLowCase});
+    public BaseResponseDto<String> add(@RequestBody ${entityName}Dto ${entityStartByLowCase}) {
+        <#-- 使用DTO作为请求对象 -->
+        Integer res = ${entityStartByLowCase}Service.add(${entityStartByLowCase}.toEntity());
         if (res == 1){
             return Result.success("新增成功");
         }
@@ -88,12 +95,13 @@ public class ${entityName}Controller {
     @ApiOperation("更新")
     </#if>
     @PutMapping("/update")
-    public BaseResponseDto<String> update(@RequestBody ${entityName} ${entityStartByLowCase}) {
+    public BaseResponseDto<String> update(@RequestBody ${entityName}Dto ${entityStartByLowCase}) {
+        <#-- 使用DTO作为请求对象 -->
         ${entityName} selById = ${entityStartByLowCase}Service.selById(${entityStartByLowCase}.getId());
         if (Objects.isNull(selById)) {
             return Result.fail("记录不存在");
         }
-        Integer res = ${entityStartByLowCase}Service.update(${entityStartByLowCase});
+        Integer res = ${entityStartByLowCase}Service.update(${entityStartByLowCase}.toEntity());
         if (res == 1) {
             return Result.success("更新成功");
         }
@@ -140,9 +148,15 @@ public class ${entityName}Controller {
     @ApiOperation("分页列表查询")
     </#if>
     @PostMapping("/page/{pageNum}/{pageSize}")
-    public BaseResponseDto<PageInfo<${entityName}>> page(@RequestBody @Nullable ${entityName} ${entityStartByLowCase},<#if swaggerEnable == true>@ApiParam(name = "pageNum", value = "页码")</#if> @PathVariable int pageNum, <#if swaggerEnable == true>@ApiParam(name = "pageSize", value = "每页数量")</#if> @PathVariable int pageSize) {
-        PageInfo<${entityName}> page = ${entityStartByLowCase}Service.page(${entityStartByLowCase}, pageNum, pageSize);
-        return Result.success("查询成功", page);
+    public BaseResponseDto<PageInfo<${entityName}Dto>> page(@RequestBody @Nullable ${entityName}Dto ${entityStartByLowCase},<#if swaggerEnable == true>@ApiParam(name = "pageNum", value = "页码")</#if> @PathVariable int pageNum, <#if swaggerEnable == true>@ApiParam(name = "pageSize", value = "每页数量")</#if> @PathVariable int pageSize) {
+        <#-- 使用DTO作为请求对象，并返回DTO列表 -->
+        PageInfo<${entityName}> page = ${entityStartByLowCase}Service.page(<#if ${entityStartByLowCase}??>${entityStartByLowCase}.toEntity()<#else>null</#if>, pageNum, pageSize);
+        PageInfo<${entityName}Dto> dtoPage = new PageInfo<>();
+        dtoPage.setPageNum(page.getPageNum());
+        dtoPage.setPageSize(page.getPageSize());
+        dtoPage.setTotal(page.getTotal());
+        dtoPage.setList(page.getList().stream().map(${entityName}::toDto).collect(Collectors.toList()));
+        return Result.success("查询成功", dtoPage);
     }
 
 }

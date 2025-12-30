@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 /**
  * @author wangzhuo
  */
@@ -27,5 +29,19 @@ public class BasicConfig {
      * 自定义ftl文件模版
      */
     private String ftlFileDirConfig;
-}
 
+    /**
+     * 是否开启Lombok支持
+     */
+    private Boolean lombokEnable;
+
+    /**
+     * 自定义分层后缀
+     */
+    private Map<String, String> layerSuffix;
+
+    /**
+     * 自定义属性
+     */
+    private Map<String, Object> customProperties;
+}

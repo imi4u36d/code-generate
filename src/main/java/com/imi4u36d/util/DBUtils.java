@@ -4,12 +4,15 @@ import com.imi4u36d.config.DBConfiguration;
 import com.imi4u36d.model.BasicInfo;
 import com.imi4u36d.model.ColumnInfo;
 import com.imi4u36d.model.ColumnType;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -18,137 +21,168 @@ import java.util.stream.Collectors;
 public class DBUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(DBUtils.class);
-
     private static final String SQL = "SELECT * FROM ";
+    private static final DBUtils INSTANCE = new DBUtils();
 
-    public static DBConfiguration dbConfiguration;
-
+    private DBConfiguration dbConfiguration;
+    private HikariDataSource dataSource;
     @Getter
-    private static Map<String, BasicInfo> tableInfoMap = new HashMap<>();
+    private final Map<String, BasicInfo> tableInfoMap = new ConcurrentHashMap<>();
 
-    private static Connection conn;
+    /**
+     * 私有构造方法，防止外部实例化
+     */
+    private DBUtils() {
+    }
+
+    /**
+     * 获取单例实例
+     *
+     * @return DBUtils实例
+     */
+    public static DBUtils getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * 设置数据库配置
+     *
+     * @param dbConfig 数据库配置
+     */
+    public void setDbConfiguration(DBConfiguration dbConfig) {
+        this.dbConfiguration = dbConfig;
+    }
+
+    /**
+     * 初始化数据库连接池
+     */
+    private void initDataSource() {
+        if (dataSource == null) {
+            synchronized (this) {
+                if (dataSource == null) {
+                    try {
+                        if (dbConfiguration == null) {
+                            throw new IllegalStateException("Database configuration is not set");
+                        }
+                        HikariConfig config = new HikariConfig();
+                        config.setDriverClassName(dbConfiguration.getDriverClassName());
+                        config.setJdbcUrl(dbConfiguration.getUrl());
+                        config.setUsername(dbConfiguration.getUsername());
+                        config.setPassword(dbConfiguration.getPwd());
+
+                        // 设置连接池参数
+                        config.setMaximumPoolSize(10);
+                        config.setMinimumIdle(5);
+                        config.setConnectionTimeout(30000);
+                        config.setIdleTimeout(600000);
+                        config.setMaxLifetime(1800000);
+
+                        dataSource = new HikariDataSource(config);
+                        logger.info("数据库连接池初始化成功");
+                    } catch (Exception e) {
+                        logger.error("数据库连接池初始化失败", e);
+                        throw new RuntimeException("Failed to initialize data source", e);
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * 获取数据库连接
      *
-     * @return
+     * @return Connection
      */
-    public static Connection getConnection() {
-        if (conn == null) {
-            try {
-                Class.forName(dbConfiguration.getDriverClassName());
-                Connection connection = DriverManager.getConnection(dbConfiguration.url, dbConfiguration.username, dbConfiguration.pwd);
-                conn = connection;
-                logger.warn("获取数据库连接成功");
-                return connection;
-            } catch (SQLException e) {
-                logger.error("获取数据库连接失败", e);
-            } catch (ClassNotFoundException e) {
-                logger.error("驱动加载失败", e);
-            }
-        }
-        return conn;
-    }
-
-    public static void closeConnection() {
-        Connection conn = getConnection();
-        if (conn != null) {
-            try {
-                conn.close();
-                logger.warn("关闭数据库连接成功");
-            } catch (SQLException e) {
-                logger.error("close connection failure", e);
-            }
+    private Connection getConnection() {
+        initDataSource();
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            logger.error("获取数据库连接失败", e);
+            throw new RuntimeException("Failed to get connection", e);
         }
     }
 
     /**
-     * 获得某表的建表语句
+     * 关闭数据库连接池
+     */
+    public void closeConnection() {
+        if (dataSource != null) {
+            dataSource.close();
+            logger.info("数据库连接池已关闭");
+        }
+    }
+
+    /**
+     * 获得某表的注释
      *
      * @param tableName
      * @return 表的注释
      */
-    public static String getCommentByTableName(String tableName) {
-        Connection conn = getConnection();
-        ResultSet rs = null;
-        Statement stmt = null;
-        try {
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery("SHOW CREATE TABLE " + tableName);
-            if (rs != null && rs.next()) {
-                String createDDL = rs.getString(2);
-                return parse(createDDL);
+    private String getCommentByTableName(String tableName) {
+        String comment = "";
+
+        // 尝试使用标准JDBC方法获取表注释
+        try (Connection conn = getConnection();
+                ResultSet rs = conn.getMetaData().getTables(null, null, tableName, new String[] { "TABLE" })) {
+            if (rs.next()) {
+                comment = rs.getString("REMARKS");
+                if (comment != null && !comment.isEmpty()) {
+                    return comment;
+                }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                rs.close();
-                stmt.close();
-//                closeConnection(conn);
-            } catch (SQLException e) {
-                logger.error("close ResultSet failure", e);
-            }
+            logger.error("使用标准JDBC方法获取表注释失败: {}", tableName, e);
         }
-        return "";
+
+        // 如果标准JDBC方法失败或未获取到注释，尝试使用数据库特定的方法
+        try (Connection conn = getConnection()) {
+            comment = getTableCommentBySpecificDB(tableName, conn);
+        } catch (SQLException e) {
+            logger.error("使用特定数据库方法获取表注释失败: {}", tableName, e);
+        }
+
+        return comment != null ? comment : "";
     }
 
-
     /**
-     * 返回注释信息
-     *
-     * @param all
-     * @return
+     * 针对不同数据库使用特定的方法获取表注释
      */
-
-    public static String parse(String all) {
-        String comment;
-        int index = all.indexOf("COMMENT='");
-        if (index < 0) {
-            return "";
+    private String getTableCommentBySpecificDB(String tableName, Connection conn) {
+        try (Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE " + tableName)) {
+            if (rs != null && rs.next()) {
+                String createDDL = rs.getString(2);
+                int index = createDDL.indexOf("COMMENT='");
+                if (index < 0) {
+                    return "";
+                }
+                String comment = createDDL.substring(index + 9);
+                comment = comment.substring(0, comment.length() - 1);
+                return comment;
+            }
+        } catch (SQLException e) {
+            logger.debug("使用MySQL特定方法获取表注释失败: {}", tableName, e);
         }
-        comment = all.substring(index + 9);
-        comment = comment.substring(0, comment.length() - 1);
-        return comment;
+        return "";
     }
 
     /**
      * 获取数据库下的所有表名
      */
-    public static List<String> getTableNames() {
+    private List<String> getTableNames() {
         List<String> tableNames = new ArrayList<>();
-        Connection conn = getConnection();
-        ResultSet rs = null;
-        try {
-            //获取数据库的元数据
-            DatabaseMetaData db = conn.getMetaData();
-            //从元数据中获取到所有的表名
-            rs = db.getTables(null, null, null, null);
+        try (Connection conn = getConnection();
+                ResultSet rs = conn.getMetaData().getTables(null, null, null, null)) {
+            // 从元数据中获取到所有的表名
             while (rs.next()) {
                 tableNames.add(rs.getString(3));
             }
-            if (!tableNames.isEmpty()) {
-                List<String> collect = new ArrayList<>();
-                tableNames.forEach(tableName -> {
-                    if (tableNames.contains(tableName)) {
-                        collect.add(tableName);
-                    }
-                });
-                return collect;
-            }
         } catch (SQLException e) {
-            logger.error("getTableNames failure", e);
-        } finally {
-            try {
-                rs.close();
-//                closeConnection(conn);
-            } catch (SQLException e) {
-                logger.error("close ResultSet failure", e);
-            }
+            logger.error("获取表名列表失败", e);
         }
         return tableNames;
     }
-
 
     /**
      * 获取表中所有字段名称
@@ -156,32 +190,20 @@ public class DBUtils {
      * @param tableName 表名
      * @return
      */
-    public static List<String> getColumnNames(String tableName) {
+    private List<String> getColumnNames(String tableName) {
         List<String> columnNames = new ArrayList<>();
-        //与数据库的连接
-        Connection conn = getConnection();
-        PreparedStatement pStemt = null;
         String tableSql = SQL + tableName;
-        try {
-            pStemt = conn.prepareStatement(tableSql);
-            //结果集元数据
+        try (Connection conn = getConnection();
+                PreparedStatement pStemt = conn.prepareStatement(tableSql)) {
+            // 结果集元数据
             ResultSetMetaData rsmd = pStemt.getMetaData();
-            //表列数
+            // 表列数
             int size = rsmd.getColumnCount();
             for (int i = 0; i < size; i++) {
                 columnNames.add(rsmd.getColumnName(i + 1));
             }
         } catch (SQLException e) {
-            logger.error("getColumnNames failure", e);
-        } finally {
-            if (pStemt != null) {
-                try {
-                    pStemt.close();
-//                    closeConnection(conn);
-                } catch (SQLException e) {
-                    logger.error("getColumnNames close pstem and connection failure", e);
-                }
-            }
+            logger.error("获取字段名称失败: {}", tableName, e);
         }
         return columnNames;
     }
@@ -192,32 +214,20 @@ public class DBUtils {
      * @param tableName
      * @return
      */
-    public static List<String> getColumnTypes(String tableName) {
+    private List<String> getColumnTypes(String tableName) {
         List<String> columnTypes = new ArrayList<>();
-        //与数据库的连接
-        Connection conn = getConnection();
-        PreparedStatement pStemt = null;
         String tableSql = SQL + tableName;
-        try {
-            pStemt = conn.prepareStatement(tableSql);
-            //结果集元数据
+        try (Connection conn = getConnection();
+                PreparedStatement pStemt = conn.prepareStatement(tableSql)) {
+            // 结果集元数据
             ResultSetMetaData rsmd = pStemt.getMetaData();
-            //表列数
+            // 表列数
             int size = rsmd.getColumnCount();
             for (int i = 0; i < size; i++) {
                 columnTypes.add(rsmd.getColumnTypeName(i + 1));
             }
         } catch (SQLException e) {
-            logger.error("getColumnTypes failure", e);
-        } finally {
-            if (pStemt != null) {
-                try {
-                    pStemt.close();
-//                    closeConnection(conn);
-                } catch (SQLException e) {
-                    logger.error("getColumnTypes close pstem and connection failure", e);
-                }
-            }
+            logger.error("获取字段类型失败: {}", tableName, e);
         }
         return columnTypes;
     }
@@ -228,30 +238,16 @@ public class DBUtils {
      * @param tableName
      * @return
      */
-    public static List<String> getColumnComments(String tableName) {
-        //与数据库的连接
-        Connection conn = getConnection();
-        PreparedStatement pStemt;
-        String tableSql = SQL + tableName;
-        List<String> columnComments = new ArrayList<>();//列名注释集合
-        ResultSet rs = null;
-        try {
-            pStemt = conn.prepareStatement(tableSql);
-            rs = pStemt.executeQuery("show full columns from " + tableName);
+    private List<String> getColumnComments(String tableName) {
+        List<String> columnComments = new ArrayList<>();// 列名注释集合
+        try (Connection conn = getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("show full columns from " + tableName)) {
             while (rs.next()) {
                 columnComments.add(rs.getString("Comment"));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-//                    closeConnection(conn);
-                } catch (SQLException e) {
-                    logger.error("getColumnComments close ResultSet and connection failure", e);
-                }
-            }
+            logger.error("获取字段注释失败: {}", tableName, e);
         }
         return columnComments;
     }
@@ -259,59 +255,127 @@ public class DBUtils {
     /**
      * 扫描表信息存储到数据模型种
      */
-    public static void scanInfoToModel(BasicInfo basicInfo) {
-        List<String> tableNames = dbConfiguration.tableNames;
+    public void scanInfoToModel(BasicInfo basicInfo) {
+        List<String> tableNames = dbConfiguration.getTableNames();
         logger.info("正在加载表：" + tableNames.toString());
-        tableNames.forEach(tableName -> {
-            logger.info("开始加载:" + tableName);
-            //获取表注释
-            String tableComment = getCommentByTableName(tableName);
-            //获取实体类名称
-            String entityName = CovertUtils.underline2Camel(tableName, true);
-            String entityNameStartByLowCase = CovertUtils.underline2Camel(tableName, false);
-            //设置一些常用的参数数据,包含:以大写开头的实体类名称、表名称、表注释、以小写字母开头的实体类名称
-            BasicInfo curBasicInfo = new BasicInfo(basicInfo);
-            curBasicInfo.setEntityName(entityName);
-            curBasicInfo.setTableName(tableName);
-            curBasicInfo.setTableComment(tableComment);
-            curBasicInfo.setEntityStartByLowCase(entityNameStartByLowCase);
+        tableInfoMap.clear(); // 清空之前的表信息
 
+        try (Connection conn = getConnection()) {
+            DatabaseMetaData dbMetaData = conn.getMetaData();
 
-            //获取字段类型
-            List<String> columnTypes = getColumnTypes(tableName);
-            //获取字段注释
-            List<String> columnComments = getColumnComments(tableName);
-            //获取字段名字
-            List<String> columnNames = getColumnNames(tableName);
+            for (String tableName : tableNames) {
+                logger.info("开始加载:" + tableName);
+                // 获取表注释
+                String tableComment = getCommentByTableName(tableName);
+                // 获取实体类名称
+                String entityName = CovertUtils.underline2Camel(tableName, true);
+                String entityNameStartByLowCase = CovertUtils.underline2Camel(tableName, false);
+                // 设置一些常用的参数数据
+                BasicInfo curBasicInfo = new BasicInfo(basicInfo);
+                curBasicInfo.setEntityName(entityName);
+                curBasicInfo.setTableName(tableName);
+                curBasicInfo.setTableComment(tableComment);
+                curBasicInfo.setEntityStartByLowCase(entityNameStartByLowCase);
 
-            //传递哥各个字段的信息到ColumnInfo对象中存储
-            List<ColumnInfo> columnInfos = new ArrayList<>();
-            Set<String> importPackages = new HashSet<>();
-            for (int i = 0, columnTypesSize = columnTypes.size(); i < columnTypesSize; i++) {
-                String columnType = columnTypes.get(i);
-                String columnName = columnNames.get(i);
-                String columnComment = columnComments.get(i);
-                ColumnInfo.ColumnInfoBuilder builder = ColumnInfo.builder();
-                ColumnInfo columnInfo = builder.columnName(columnName)
-                        .columnType(columnType)
-                        .javaName(CovertUtils.underline2Camel(columnName, false))
-                        .javaType(ColumnType.valueOf(columnType).getFieldType())
-                        .columnComment(columnComment)
-                        .build();
-                columnInfos.add(columnInfo);
-                //这里我们放入一些需要导包的数据类型的包路径
-                importPackages.add(ColumnType.valueOf(columnType).getPackageName());
+                // 一次查询获取所有字段信息
+                List<ColumnInfo> columnInfos = new ArrayList<>();
+                Set<String> importPackages = new HashSet<>();
+
+                // 如果开启Lombok支持，添加Lombok的import包
+                if (basicInfo.getLombokEnable()) {
+                    importPackages.add("lombok.Data");
+                    importPackages.add("lombok.NoArgsConstructor");
+                    importPackages.add("lombok.AllArgsConstructor");
+                }
+
+                // 获取字段信息（名称、类型）
+                try (ResultSet columnsRs = dbMetaData.getColumns(null, null, tableName, null)) {
+                    // 同时获取字段注释
+                    Map<String, String> columnCommentMap = getColumnCommentMap(tableName, conn);
+
+                    while (columnsRs.next()) {
+                        String columnName = columnsRs.getString(4); // COLUMN_NAME
+                        String columnType = columnsRs.getString(6); // TYPE_NAME
+                        String columnComment = columnCommentMap.getOrDefault(columnName, "");
+
+                        ColumnInfo.ColumnInfoBuilder builder = ColumnInfo.builder();
+                        ColumnInfo columnInfo = builder.columnName(columnName)
+                                .columnType(columnType)
+                                .javaName(CovertUtils.underline2Camel(columnName, false))
+                                .javaType(ColumnType.valueOf(columnType).getFieldType())
+                                .columnComment(columnComment)
+                                .build();
+                        columnInfos.add(columnInfo);
+
+                        // 添加需要导包的数据类型
+                        String packageName = ColumnType.valueOf(columnType).getPackageName();
+                        if (!packageName.isEmpty()) {
+                            importPackages.add(packageName);
+                        }
+                    }
+                }
+
+                // 设定详细的包信息/列信息
+                List<String> importInfos = importPackages.stream().collect(Collectors.toList());
+                curBasicInfo.setImportPackages(importInfos);
+                curBasicInfo.setColumnInfos(columnInfos);
+                tableInfoMap.put(tableName, curBasicInfo);
+                logger.info("加载完成:" + tableName);
             }
-            //设定详细的包信息/列信息
-            List<String> importInfos = importPackages.stream().filter(str -> !str.isEmpty()).collect(Collectors.toList());
-            curBasicInfo.setImportPackages(importInfos);
-            curBasicInfo.setColumnInfos(columnInfos);
-            tableInfoMap.put(tableName, curBasicInfo);
-            logger.info("加载完成:" + tableName);
-        });
-        tableInfoMap.forEach((k, v) -> {
-            System.out.println(k + ":" + v);
-        });
+        } catch (SQLException e) {
+            logger.error("获取表信息失败", e);
+            throw new RuntimeException("Failed to get table information", e);
+        }
+
+        logger.info("所有表加载完成，共加载了 {} 张表", tableInfoMap.size());
+    }
+
+    /**
+     * 批量获取字段注释
+     */
+    private Map<String, String> getColumnCommentMap(String tableName, Connection conn) {
+        Map<String, String> commentMap = new HashMap<>();
+
+        // 尝试使用标准JDBC方法获取字段注释
+        try (ResultSet columnsRs = conn.getMetaData().getColumns(null, null, tableName, null)) {
+            while (columnsRs.next()) {
+                String columnName = columnsRs.getString("COLUMN_NAME");
+                String columnComment = columnsRs.getString("REMARKS");
+                commentMap.put(columnName, columnComment != null ? columnComment : "");
+            }
+        } catch (SQLException e) {
+            logger.error("使用标准JDBC方法获取字段注释失败: {}", tableName, e);
+        }
+
+        // 如果标准JDBC方法未获取到注释，尝试使用数据库特定的方法
+        boolean hasComments = commentMap.values().stream().anyMatch(comment -> !comment.isEmpty());
+        if (!hasComments) {
+            commentMap = getColumnCommentBySpecificDB(tableName, conn);
+        }
+
+        return commentMap;
+    }
+
+    /**
+     * 针对不同数据库使用特定的方法获取字段注释
+     */
+    private Map<String, String> getColumnCommentBySpecificDB(String tableName, Connection conn) {
+        Map<String, String> commentMap = new HashMap<>();
+
+        // 尝试使用MySQL特定方法
+        try (Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SHOW FULL COLUMNS FROM " + tableName)) {
+            while (rs.next()) {
+                String columnName = rs.getString("Field");
+                String comment = rs.getString("Comment");
+                commentMap.put(columnName, comment != null ? comment : "");
+            }
+        } catch (SQLException e) {
+            logger.debug("使用MySQL特定方法获取字段注释失败: {}", tableName, e);
+            // 可以在这里添加其他数据库的特定方法
+        }
+
+        return commentMap;
     }
 
 }

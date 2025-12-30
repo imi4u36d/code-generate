@@ -107,6 +107,21 @@ public class BasicInfo {
      */
     private Boolean overWriteEnable;
 
+    /**
+     * 是否开启Lombok支持
+     */
+    private Boolean lombokEnable;
+
+    /**
+     * 自定义分层后缀
+     */
+    private String controllerSuffix = "Controller";
+    private String serviceSuffix = "Service";
+    private String serviceImplSuffix = "Impl";
+    private String mapperSuffix = "Mapper";
+    private String dtoSuffix = "Dto";
+    private String entitySuffix = "Entity";
+
     public BasicInfo(BasicInfo basicInfo) {
         this.entityName = basicInfo.getEntityName();
         this.tableName = basicInfo.getTableName();
@@ -125,6 +140,13 @@ public class BasicInfo {
         this.columnInfos = basicInfo.getColumnInfos();
         this.swaggerEnable = basicInfo.getSwaggerEnable();
         this.overWriteEnable = basicInfo.getOverWriteEnable();
+        this.lombokEnable = basicInfo.getLombokEnable();
+        this.controllerSuffix = basicInfo.getControllerSuffix();
+        this.serviceSuffix = basicInfo.getServiceSuffix();
+        this.serviceImplSuffix = basicInfo.getServiceImplSuffix();
+        this.mapperSuffix = basicInfo.getMapperSuffix();
+        this.dtoSuffix = basicInfo.getDtoSuffix();
+        this.entitySuffix = basicInfo.getEntitySuffix();
     }
 
     private String nowTime() {

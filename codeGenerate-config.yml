@@ -18,3 +18,24 @@ outputConfig:
   overwriteEnable: true
 
 ftlFileDir: /Users/wangzhuo/Downloads/ftl
+
+# 自定义属性
+customProperties:
+  # Lombok支持
+  lombokEnable: true
+  # 自定义分层后缀
+  layerSuffix:
+    controller: Controller
+    service: Service
+    serviceImpl: Impl
+    mapper: Mapper
+    dto: Dto
+    entity: Entity
+  # 自定义分层包名称
+  layerPackageName:
+    dto: dto
+    entity: domain
+    service: service
+    serviceImpl: service.impl
+    mapper: mapper
+    controller: controller
