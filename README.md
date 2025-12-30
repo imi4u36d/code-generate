@@ -10,7 +10,8 @@
 - **多表同时生成**：支持同时为多个数据库表生成代码，提高开发效率。
 - **灵活的配置**：通过 YAML 配置文件，用户可以轻松指定数据库连接信息、需要生成代码的表以及输出路径等。
 - **自定义生成模版**：可自定义生成模版，按需调整。
-- **支持 Swagger 配置**：可选择是否启用 Swagger 文档生成。
+- **多数据库支持**：支持 MySQL、PostgreSQL、Oracle、SQL Server、H2 等多种数据库。
+- **API 文档增强**：支持 Swagger、OpenAPI、AsyncAPI 等多种 API 文档格式和版本。
 - **代码覆盖控制**：支持覆盖已存在的代码文件（可配置）。
 - **超小体积**：45KB 超小体积，小身材，大作用。
 - **Lombok 支持**：自动添加 Lombok 注解和导入语句。
@@ -37,6 +38,10 @@ tables:
 
 swaggerConfig:
   swaggerEnable: true
+  # API文档类型：swagger, openapi, asyncapi（默认：swagger）
+  apiDocType: swagger
+  # API文档版本（默认：3.0）
+  apiDocVersion: 3.0
 
 outputConfig:
   baseOutputDir: /path/to/output

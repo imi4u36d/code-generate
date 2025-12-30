@@ -1,7 +1,7 @@
 database:
   url: jdbc:mysql://localhost:3306/auth
   username: root
-  password: Wz.0323.
+  password: root
   driverClassName: com.mysql.cj.jdbc.Driver
 
 tables:
@@ -10,6 +10,10 @@ tables:
 
 swaggerConfig:
   swaggerEnable: true
+  # API文档类型：swagger, openapi, asyncapi（默认：swagger）
+  apiDocType: swagger
+  # API文档版本（默认：3.0）
+  apiDocVersion: 3.0
 
 outputConfig:
   baseOutputDir: /Users/wangzhuo/Downloads/code

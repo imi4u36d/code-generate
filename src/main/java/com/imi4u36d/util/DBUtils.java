@@ -4,6 +4,7 @@ import com.imi4u36d.config.DBConfiguration;
 import com.imi4u36d.model.BasicInfo;
 import com.imi4u36d.model.ColumnInfo;
 import com.imi4u36d.model.ColumnType;
+import com.imi4u36d.model.DatabaseType;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
@@ -149,6 +150,34 @@ public class DBUtils {
      * 针对不同数据库使用特定的方法获取表注释
      */
     private String getTableCommentBySpecificDB(String tableName, Connection conn) {
+        try {
+            DatabaseType dbType = DatabaseType.fromJdbcUrl(dbConfiguration.getUrl());
+
+            switch (dbType) {
+                case MYSQL:
+                    return getMySQLTableComment(tableName, conn);
+                case POSTGRESQL:
+                    return getPostgreSQLTableComment(tableName, conn);
+                case ORACLE:
+                    return getOracleTableComment(tableName, conn);
+                case SQL_SERVER:
+                    return getSqlServerTableComment(tableName, conn);
+                case H2:
+                    return getH2TableComment(tableName, conn);
+                default:
+                    logger.warn("不支持的数据库类型: {}", dbType.getName());
+                    return "";
+            }
+        } catch (SQLException e) {
+            logger.error("获取表注释失败: {}", tableName, e);
+            return "";
+        }
+    }
+
+    /**
+     * 获取MySQL表注释
+     */
+    private String getMySQLTableComment(String tableName, Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE " + tableName)) {
             if (rs != null && rs.next()) {
@@ -158,13 +187,70 @@ public class DBUtils {
                     return "";
                 }
                 String comment = createDDL.substring(index + 9);
-                comment = comment.substring(0, comment.length() - 1);
+                comment = comment.substring(0, comment.indexOf("'", index + 9));
                 return comment;
             }
-        } catch (SQLException e) {
-            logger.debug("使用MySQL特定方法获取表注释失败: {}", tableName, e);
         }
         return "";
+    }
+
+    /**
+     * 获取PostgreSQL表注释
+     */
+    private String getPostgreSQLTableComment(String tableName, Connection conn) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT obj_description(oid, 'pg_class') FROM pg_class WHERE relname = ?");) {
+            pstmt.setString(1, tableName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String comment = rs.getString(1);
+                    return comment != null ? comment : "";
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取Oracle表注释
+     */
+    private String getOracleTableComment(String tableName, Connection conn) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT comments FROM user_tab_comments WHERE table_name = ?");) {
+            pstmt.setString(1, tableName.toUpperCase());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String comment = rs.getString(1);
+                    return comment != null ? comment : "";
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取SQL Server表注释
+     */
+    private String getSqlServerTableComment(String tableName, Connection conn) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT value FROM sys.extended_properties WHERE major_id = OBJECT_ID(?) AND name = 'MS_Description' AND minor_id = 0");) {
+            pstmt.setString(1, tableName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String comment = rs.getString(1);
+                    return comment != null ? comment : "";
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取H2表注释
+     */
+    private String getH2TableComment(String tableName, Connection conn) throws SQLException {
+        // H2支持SHOW CREATE TABLE语法，类似于MySQL
+        return getMySQLTableComment(tableName, conn);
     }
 
     /**
@@ -362,7 +448,36 @@ public class DBUtils {
     private Map<String, String> getColumnCommentBySpecificDB(String tableName, Connection conn) {
         Map<String, String> commentMap = new HashMap<>();
 
-        // 尝试使用MySQL特定方法
+        try {
+            DatabaseType dbType = DatabaseType.fromJdbcUrl(dbConfiguration.getUrl());
+
+            switch (dbType) {
+                case MYSQL:
+                    return getMySQLColumnComments(tableName, conn);
+                case POSTGRESQL:
+                    return getPostgreSQLColumnComments(tableName, conn);
+                case ORACLE:
+                    return getOracleColumnComments(tableName, conn);
+                case SQL_SERVER:
+                    return getSqlServerColumnComments(tableName, conn);
+                case H2:
+                    return getH2ColumnComments(tableName, conn);
+                default:
+                    logger.warn("不支持的数据库类型: {}", dbType.getName());
+                    return commentMap;
+            }
+        } catch (SQLException e) {
+            logger.error("获取字段注释失败: {}", tableName, e);
+            return commentMap;
+        }
+    }
+
+    /**
+     * 获取MySQL字段注释
+     */
+    private Map<String, String> getMySQLColumnComments(String tableName, Connection conn) throws SQLException {
+        Map<String, String> commentMap = new HashMap<>();
+
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SHOW FULL COLUMNS FROM " + tableName)) {
             while (rs.next()) {
@@ -370,12 +485,84 @@ public class DBUtils {
                 String comment = rs.getString("Comment");
                 commentMap.put(columnName, comment != null ? comment : "");
             }
-        } catch (SQLException e) {
-            logger.debug("使用MySQL特定方法获取字段注释失败: {}", tableName, e);
-            // 可以在这里添加其他数据库的特定方法
         }
 
         return commentMap;
+    }
+
+    /**
+     * 获取PostgreSQL字段注释
+     */
+    private Map<String, String> getPostgreSQLColumnComments(String tableName, Connection conn) throws SQLException {
+        Map<String, String> commentMap = new HashMap<>();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT column_name, column_comment FROM information_schema.columns WHERE table_name = ?")) {
+            pstmt.setString(1, tableName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String columnName = rs.getString("column_name");
+                    String comment = rs.getString("column_comment");
+                    commentMap.put(columnName, comment != null ? comment : "");
+                }
+            }
+        }
+
+        return commentMap;
+    }
+
+    /**
+     * 获取Oracle字段注释
+     */
+    private Map<String, String> getOracleColumnComments(String tableName, Connection conn) throws SQLException {
+        Map<String, String> commentMap = new HashMap<>();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT column_name, comments FROM user_col_comments WHERE table_name = ?")) {
+            pstmt.setString(1, tableName.toUpperCase());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String columnName = rs.getString("column_name");
+                    String comment = rs.getString("comments");
+                    commentMap.put(columnName.toLowerCase(), comment != null ? comment : "");
+                }
+            }
+        }
+
+        return commentMap;
+    }
+
+    /**
+     * 获取SQL Server字段注释
+     */
+    private Map<String, String> getSqlServerColumnComments(String tableName, Connection conn) throws SQLException {
+        Map<String, String> commentMap = new HashMap<>();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT c.name AS column_name, ep.value AS column_comment " +
+                        "FROM sys.columns c " +
+                        "LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id AND ep.name = 'MS_Description' "
+                        +
+                        "WHERE OBJECT_NAME(c.object_id) = ?")) {
+            pstmt.setString(1, tableName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String columnName = rs.getString("column_name");
+                    String comment = rs.getString("column_comment");
+                    commentMap.put(columnName, comment != null ? comment : "");
+                }
+            }
+        }
+
+        return commentMap;
+    }
+
+    /**
+     * 获取H2字段注释
+     */
+    private Map<String, String> getH2ColumnComments(String tableName, Connection conn) throws SQLException {
+        // H2支持SHOW FULL COLUMNS语法，类似于MySQL
+        return getMySQLColumnComments(tableName, conn);
     }
 
 }

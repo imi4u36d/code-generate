@@ -56,7 +56,7 @@ public class CodeGenerateMojo extends AbstractMojo {
 
             var database = (Map<String, String>) obj.get("database");
             var tables = (List<Map<String, String>>) obj.get("tables");
-            var swaggerConfig = (Map<String, Boolean>) obj.get("swaggerConfig");
+            var swaggerConfig = (Map<String, Object>) obj.get("swaggerConfig");
             var outputConfig = (Map<String, Object>) obj.get("outputConfig");
             var ftlFileDirConfig = (String) obj.get("ftlFileDir");
 
@@ -72,10 +72,17 @@ public class CodeGenerateMojo extends AbstractMojo {
             @SuppressWarnings("unchecked")
             var layerSuffix = (Map<String, String>) customProperties.getOrDefault("layerSuffix", new HashMap<>());
 
-            // 基本信息
-            // 是否开启swagger注解
-            final var swaggerEnable = swaggerConfig.get("swaggerEnable");
-            logger.info("Swagger注解启用状态: {}", swaggerEnable);
+            // API文档配置
+            // 是否开启API文档
+            final var apiDocEnable = swaggerConfig.getOrDefault("swaggerEnable", false);
+            // API文档类型: swagger, openapi, asyncapi
+            final var apiDocType = swaggerConfig.getOrDefault("apiDocType", "swagger").toString();
+            // API文档版本
+            final var apiDocVersion = swaggerConfig.getOrDefault("apiDocVersion", "3.0").toString();
+
+            logger.info("API文档启用状态: {}", apiDocEnable);
+            logger.info("API文档类型: {}", apiDocType);
+            logger.info("API文档版本: {}", apiDocVersion);
 
             // 设置文件保存位置
             var outputDir = outputConfig.get("baseOutputDir").toString();
@@ -146,7 +153,9 @@ public class CodeGenerateMojo extends AbstractMojo {
             logger.info("生成代码的表: {}", tableNames);
 
             var basicConfig = new BasicConfig().toBuilder()
-                    .swaggerEnable(swaggerEnable)
+                    .apiDocEnable((Boolean) apiDocEnable)
+                    .apiDocType(apiDocType)
+                    .apiDocVersion(apiDocVersion)
                     .overWriteEnable(overwriteEnable)
                     .ftlFileDirConfig(ftlFileDirConfig)
                     .lombokEnable(lombokEnable)
@@ -168,7 +177,7 @@ public class CodeGenerateMojo extends AbstractMojo {
                     .implUrl(implUrl)
                     .mapperUrl(mapperUrl)
                     .utilUrl(utilUrl)
-                    .swaggerEnable(swaggerEnable)
+                    .swaggerEnable((Boolean) apiDocEnable)
                     .overWriteEnable(overwriteEnable)
                     .lombokEnable(lombokEnable);
 

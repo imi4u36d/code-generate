@@ -16,9 +16,19 @@ import java.util.Map;
 @Builder(toBuilder = true)
 public class BasicConfig {
     /**
-     * 是否开启swagger支持
+     * API文档类型: swagger, openapi, asyncapi
      */
-    private Boolean swaggerEnable;
+    private String apiDocType;
+
+    /**
+     * API文档版本
+     */
+    private String apiDocVersion;
+
+    /**
+     * 是否开启API文档支持
+     */
+    private Boolean apiDocEnable;
 
     /**
      * 是否开启强制覆盖
