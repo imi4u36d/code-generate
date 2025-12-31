@@ -48,7 +48,21 @@ public class FreemarkerUtils {
             fileName = basicInfo.getEntityName() + extensionName;
         }
 
-        return outputDir + File.separator + packageName + File.separator + fileName;
+        // 构建完整的目录结构：src/main/java + 包路径 + 组件类型
+        String fullPath;
+        if (fileType == FileType.XML) {
+            // XML文件放在resources/mapper目录下
+            fullPath = outputDir + File.separator + "src" + File.separator + "main" + File.separator + "resources"
+                    + File.separator + "mapper" + File.separator + fileName;
+        } else {
+            // Java文件放在src/main/java目录下
+            fullPath = outputDir + File.separator + "src" + File.separator + "main" + File.separator + "java"
+                    + File.separator +
+                    basicInfo.getPackageUrl().replace(".", File.separator) + File.separator +
+                    packageName + File.separator + fileName;
+        }
+
+        return fullPath;
     }
 
     private static BaseResModel createFile(BasicConfig basicConfig, BasicInfo basicInfo, String fileName,

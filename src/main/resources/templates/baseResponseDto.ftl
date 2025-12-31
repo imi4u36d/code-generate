@@ -1,4 +1,4 @@
-package ${packageUrl};
+package ${packageUrl}.res;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -111,6 +111,7 @@ public class CodeGenerateMojo extends AbstractMojo {
             var mapperLayer = layerPackageName.getOrDefault("mapper", "mapper");
             var controllerLayer = layerPackageName.getOrDefault("controller", "controller");
             var utilLayer = layerPackageName.getOrDefault("util", "utils");
+            var resLayer = layerPackageName.getOrDefault("res", "res");
 
             // dto文件包地址
             var dtoUrl = packageUrl + "." + dtoLayer;
@@ -124,9 +125,13 @@ public class CodeGenerateMojo extends AbstractMojo {
             var mapperUrl = packageUrl + "." + mapperLayer;
             // util文件包地址
             var utilUrl = packageUrl + "." + utilLayer;
+            // res文件包地址
+            var resUrl = packageUrl + "." + resLayer;
 
-            logger.info("分层包配置: dto={}, entity={}, service={}, serviceImpl={}, mapper={}, controller={}, util={}",
-                    dtoLayer, entityLayer, serviceLayer, serviceImplLayer, mapperLayer, controllerLayer, utilLayer);
+            logger.info(
+                    "分层包配置: dto={}, entity={}, service={}, serviceImpl={}, mapper={}, controller={}, util={}, res={}",
+                    dtoLayer, entityLayer, serviceLayer, serviceImplLayer, mapperLayer, controllerLayer, utilLayer,
+                    resLayer);
 
             // 数据库连接信息
             var url = database.get("url");
@@ -177,6 +182,7 @@ public class CodeGenerateMojo extends AbstractMojo {
                     .implUrl(implUrl)
                     .mapperUrl(mapperUrl)
                     .utilUrl(utilUrl)
+                    .resUrl(resUrl)
                     .swaggerEnable((Boolean) apiDocEnable)
                     .overWriteEnable(overwriteEnable)
                     .lombokEnable(lombokEnable);

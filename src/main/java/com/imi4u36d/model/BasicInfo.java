@@ -78,6 +78,11 @@ public class BasicInfo {
     String utilUrl;
 
     /**
+     * res文件包地址
+     */
+    String resUrl;
+
+    /**
      * 说明
      */
     String illustrate;
@@ -134,6 +139,7 @@ public class BasicInfo {
         this.implUrl = basicInfo.getImplUrl();
         this.mapperUrl = basicInfo.getMapperUrl();
         this.utilUrl = basicInfo.getUtilUrl();
+        this.resUrl = basicInfo.getResUrl();
         this.illustrate = basicInfo.getIllustrate();
         this.author = basicInfo.getAuthor();
         this.entityStartByLowCase = basicInfo.getEntityStartByLowCase();

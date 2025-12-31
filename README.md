@@ -88,36 +88,35 @@ mvn code-generate:code-generate
 
 ```
 output-directory
-└── src
-    └── main
-        ├── java
-        │   └── com
-        │       └── yourcompany
-        │           ├── controller
-        │           │   └── YourTableNameController.java
-        │           │   └── AnotherTableNameController.java
-        │           ├── domain
-        │           │   └── YourTableNameEntity.java
-        │           │   └── AnotherTableNameEntity.java
-        │           ├── dto
-        │           │   ├── YourTableNameDto.java
-        │           │   ├── AnotherTableNameDto.java
-        │           ├── res
-        │           │   ├── BaseResponseDto.java  # 只生成一次
-        │           │   └── Result.java           # 只生成一次
-        │           ├── mapper
-        │           │   ├── YourTableNameMapper.java
-        │           │   ├── AnotherTableNameMapper.java
-        │           └── service
-        │               ├── YourTableNameService.java
-        │               ├── AnotherTableNameService.java
-        │               └── impl
-        │                   └── YourTableNameServiceImpl.java
-        │                   └── AnotherTableNameServiceImpl.java
-        └── resources
-            └── mapper
-                └── YourTableNameMapper.xml
-                └── AnotherTableNameMapper.xml
+├── src
+│   └── main
+│       └── java
+│           └── com
+│               └── yourcompany
+│                   └── res
+│                       ├── BaseResponseDto.java
+│                       └── Result.java
+└── your_table_name
+    └── src
+        └── main
+            ├── java
+            │   └── com
+            │       └── yourcompany
+            │           ├── controller
+            │           │   └── YourTableNameController.java
+            │           ├── domain
+            │           │   └── YourTableNameEntity.java
+            │           ├── dto
+            │           │   └── YourTableNameDto.java
+            │           ├── mapper
+            │           │   └── YourTableNameMapper.java
+            │           └── service
+            │               ├── YourTableNameService.java
+            │               └── impl
+            │                   └── YourTableNameServiceImpl.java
+            └── resources
+                └── mapper
+                    └── YourTableNameMapper.xml
 ```
 
 ### 4. 核心代码示例

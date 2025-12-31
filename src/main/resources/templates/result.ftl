@@ -1,6 +1,6 @@
-package ${packageUrl};
+package ${packageUrl}.res;
 
-import ${packageUrl}.BaseResponseDto;
+import ${packageUrl}.res.BaseResponseDto;
 import lombok.Data;
 
 @Data
