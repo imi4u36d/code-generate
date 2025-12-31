@@ -193,12 +193,32 @@ public class CodeGenerateMojo extends AbstractMojo {
             var tableInfoList = scanTableInfo(basicInfo);
             logger.info("表信息扫描完成，共扫描 {} 张表", tableInfoList.size());
 
-            // 全部生成
+            // 开始生成代码文件
             logger.info("开始生成代码文件");
-            Arrays.stream(FileType.values())
-                    .parallel() // 使用并行流提高生成效率
-                    .forEach(fileType -> tableInfoList.forEach((tableName, info) -> FreemarkerUtils
-                            .ftlToFile(basicConfig, info, fileType, outputDir + File.separator + tableName)));
+            
+            // 先获取第一个表的basicInfo作为通用类生成的基础
+            var firstTableInfo = tableInfoList.values().iterator().next();
+            
+            // 分离通用类和普通类
+            var commonFileTypes = Arrays.asList(FileType.RES, FileType.BASERESDTO);
+            var normalFileTypes = Arrays.stream(FileType.values())
+                    .filter(fileType -> !commonFileTypes.contains(fileType))
+                    .collect(Collectors.toList());
+            
+            // 生成通用类（只生成一次）
+            commonFileTypes.forEach(fileType -> {
+                logger.info("生成通用类: {}", fileType.getExtension());
+                // 使用第一个表的输出目录，通用类将生成在该目录下
+                String commonOutputDir = outputDir + File.separator + tableInfoList.keySet().iterator().next();
+                FreemarkerUtils.ftlToFile(basicConfig, firstTableInfo, fileType, commonOutputDir);
+            });
+            
+            // 生成为每个表生成的类
+            normalFileTypes.parallelStream().forEach(fileType -> {
+                tableInfoList.forEach((tableName, info) -> {
+                    FreemarkerUtils.ftlToFile(basicConfig, info, fileType, outputDir + File.separator + tableName);
+                });
+            });
 
             logger.info("代码生成完成");
 

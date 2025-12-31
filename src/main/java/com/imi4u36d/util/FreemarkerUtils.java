@@ -37,7 +37,18 @@ public class FreemarkerUtils {
     private static String getFileName(BasicInfo basicInfo, FileType fileType, String outputDir) {
         String extensionName = fileType.getExtension();
         String packageName = fileType.getPackageName();
-        return outputDir + File.separator + packageName + File.separator + basicInfo.getEntityName() + extensionName;
+
+        // 对于Result和BaseResponseDto等通用类，不添加实体名称前缀
+        String fileName;
+        if (fileType == FileType.RES || fileType == FileType.BASERESDTO) {
+            // 直接使用扩展名作为文件名（因为扩展名已经包含了完整的类名，如"Result.java"）
+            fileName = extensionName;
+        } else {
+            // 其他类添加实体名称前缀
+            fileName = basicInfo.getEntityName() + extensionName;
+        }
+
+        return outputDir + File.separator + packageName + File.separator + fileName;
     }
 
     private static BaseResModel createFile(BasicConfig basicConfig, BasicInfo basicInfo, String fileName,

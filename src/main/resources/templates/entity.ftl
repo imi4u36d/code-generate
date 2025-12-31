@@ -9,7 +9,7 @@ import ${package};
 
 /**
  * @说明: ${tableComment}实体
- * @作者: ${author} powered By 妙妙
+ * @作者: ${author} powered By noWork.fun
  * @创建时间: ${curTime}
  */
 @Data

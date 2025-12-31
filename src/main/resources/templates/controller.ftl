@@ -9,10 +9,10 @@ import ${serviceUrl}.${entityName}Service;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 <#-- 自定义返回对象 -->
-<#if customProperties.returnObject??>
+<#if customProperties?? && customProperties.returnObject??>
 import ${customProperties.returnObject.packagePath};
 <#else>
-import com.miaomiao.miaomiaoservice.utils.Result;
+import com.nowork.utils.Result;
 </#if>
 <#if swaggerEnable == true>
 import io.swagger.annotations.Api;
@@ -51,7 +51,7 @@ public class ${entityName}Controller {
     @PostMapping("/list")
     public BaseResponseDto<List<${entityName}Dto>> list(@RequestBody @Nullable ${entityName}Dto ${entityStartByLowCase}) {
         <#-- 使用DTO作为请求对象 -->
-        List<${entityName}> list = ${entityStartByLowCase}Service.list(<#if ${entityStartByLowCase}??>${entityStartByLowCase}.toEntity()<#else>null</#if>);
+        List<${entityName}> list = ${entityStartByLowCase}Service.list(<#if entityStartByLowCase??>${entityStartByLowCase}.toEntity()<#else>null</#if>);
         List<${entityName}Dto> resList = list.stream().map(${entityName}::toDto).collect(Collectors.toList());
         return Result.success("查询成功", resList);
     }
@@ -150,7 +150,7 @@ public class ${entityName}Controller {
     @PostMapping("/page/{pageNum}/{pageSize}")
     public BaseResponseDto<PageInfo<${entityName}Dto>> page(@RequestBody @Nullable ${entityName}Dto ${entityStartByLowCase},<#if swaggerEnable == true>@ApiParam(name = "pageNum", value = "页码")</#if> @PathVariable int pageNum, <#if swaggerEnable == true>@ApiParam(name = "pageSize", value = "每页数量")</#if> @PathVariable int pageSize) {
         <#-- 使用DTO作为请求对象，并返回DTO列表 -->
-        PageInfo<${entityName}> page = ${entityStartByLowCase}Service.page(<#if ${entityStartByLowCase}??>${entityStartByLowCase}.toEntity()<#else>null</#if>, pageNum, pageSize);
+        PageInfo<${entityName}> page = ${entityStartByLowCase}Service.page(<#if entityStartByLowCase??>${entityStartByLowCase}.toEntity()<#else>null</#if>, pageNum, pageSize);
         PageInfo<${entityName}Dto> dtoPage = new PageInfo<>();
         dtoPage.setPageNum(page.getPageNum());
         dtoPage.setPageSize(page.getPageSize());
