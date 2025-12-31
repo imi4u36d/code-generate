@@ -12,7 +12,7 @@ public enum FileType {
     MAPPER("Mapper.java", "mapper.ftl", "mapper"),
     XML("Mapper.xml", "xml.ftl", "mapper"),
     DTO("Dto.java", "dto.ftl", "dto"),
-    BASERESDTO("BaseResponseDto.java", "baseResponseDto.ftl", "dto"),
+    BASERESDTO("BaseResponseDto.java", "baseResponseDto.ftl", "res"),
     RES("Result.java", "result.ftl", "res");
 
     private final String extension;

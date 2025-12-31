@@ -195,24 +195,23 @@ public class CodeGenerateMojo extends AbstractMojo {
 
             // 开始生成代码文件
             logger.info("开始生成代码文件");
-            
+
             // 先获取第一个表的basicInfo作为通用类生成的基础
             var firstTableInfo = tableInfoList.values().iterator().next();
-            
+
             // 分离通用类和普通类
             var commonFileTypes = Arrays.asList(FileType.RES, FileType.BASERESDTO);
             var normalFileTypes = Arrays.stream(FileType.values())
                     .filter(fileType -> !commonFileTypes.contains(fileType))
                     .collect(Collectors.toList());
-            
+
             // 生成通用类（只生成一次）
             commonFileTypes.forEach(fileType -> {
                 logger.info("生成通用类: {}", fileType.getExtension());
-                // 使用第一个表的输出目录，通用类将生成在该目录下
-                String commonOutputDir = outputDir + File.separator + tableInfoList.keySet().iterator().next();
-                FreemarkerUtils.ftlToFile(basicConfig, firstTableInfo, fileType, commonOutputDir);
+                // 直接使用根目录作为输出目录，通用类将生成在根目录下
+                FreemarkerUtils.ftlToFile(basicConfig, firstTableInfo, fileType, outputDir);
             });
-            
+
             // 生成为每个表生成的类
             normalFileTypes.parallelStream().forEach(fileType -> {
                 tableInfoList.forEach((tableName, info) -> {

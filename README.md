@@ -87,7 +87,7 @@ mvn code-generate:code-generate
 自动生成完整的代码结构，包括以下文件：
 
 ```
-your_table_name
+output-directory
 └── src
     └── main
         ├── java
@@ -95,22 +95,29 @@ your_table_name
         │       └── yourcompany
         │           ├── controller
         │           │   └── YourTableNameController.java
+        │           │   └── AnotherTableNameController.java
         │           ├── domain
         │           │   └── YourTableNameEntity.java
+        │           │   └── AnotherTableNameEntity.java
         │           ├── dto
         │           │   ├── YourTableNameDto.java
-        │           │   ├── BaseResponseDto.java
-        │           │   └── Result.java
+        │           │   ├── AnotherTableNameDto.java
+        │           ├── res
+        │           │   ├── BaseResponseDto.java  # 只生成一次
+        │           │   └── Result.java           # 只生成一次
         │           ├── mapper
         │           │   ├── YourTableNameMapper.java
-        │           │   └── YourTableNameMapper.xml
+        │           │   ├── AnotherTableNameMapper.java
         │           └── service
         │               ├── YourTableNameService.java
+        │               ├── AnotherTableNameService.java
         │               └── impl
         │                   └── YourTableNameServiceImpl.java
+        │                   └── AnotherTableNameServiceImpl.java
         └── resources
             └── mapper
                 └── YourTableNameMapper.xml
+                └── AnotherTableNameMapper.xml
 ```
 
 ### 4. 核心代码示例
@@ -120,11 +127,11 @@ your_table_name
 ```java
 package com.yourcompany.controller;
 
-import com.yourcompany.dto.BaseResponseDto;
 import com.yourcompany.dto.YourTableNameDto;
+import com.yourcompany.res.BaseResponseDto;
+import com.yourcompany.res.Result;
 import com.yourcompany.service.YourTableNameService;
 import org.springframework.web.bind.annotation.*;
-import com.miaomiao.miaomiaoservice.utils.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiOperation;
@@ -150,7 +157,7 @@ public class YourTableNameController {
     */
     @ApiOperation("查询列表")
     @PostMapping("/list")
-    public BaseResponseDto list(@RequestBody YourTableNameDto yourTableName) {
+    public Result list(@RequestBody YourTableNameDto yourTableName) {
         return yourTableNameService.list(yourTableName);
     }
 
@@ -159,7 +166,7 @@ public class YourTableNameController {
     */
     @ApiOperation("通过id查询对象")
     @GetMapping("/selById/{id}")
-    public BaseResponseDto selById(@ApiParam(name = "id", value = "需要查询数据的id") @PathVariable Long id) {
+    public Result selById(@ApiParam(name = "id", value = "需要查询数据的id") @PathVariable Long id) {
         return yourTableNameService.selById(id);
     }
 
@@ -168,7 +175,7 @@ public class YourTableNameController {
     */
     @ApiOperation("新增")
     @PostMapping("/add")
-    public BaseResponseDto add(@RequestBody YourTableNameDto yourTableName) {
+    public Result add(@RequestBody YourTableNameDto yourTableName) {
         return yourTableNameService.add(yourTableName);
     }
 
@@ -177,7 +184,7 @@ public class YourTableNameController {
     */
     @ApiOperation("更新")
     @PutMapping("/update")
-    public BaseResponseDto update(@RequestBody YourTableNameDto yourTableName) {
+    public Result update(@RequestBody YourTableNameDto yourTableName) {
         return yourTableNameService.update(yourTableName);
     }
 
@@ -186,7 +193,7 @@ public class YourTableNameController {
     */
     @ApiOperation("通过id删除")
     @PutMapping("/delById/{id}")
-    public BaseResponseDto delById(@ApiParam(name = "id", value = "需要删除数据的id") @PathVariable Long id) {
+    public Result delById(@ApiParam(name = "id", value = "需要删除数据的id") @PathVariable Long id) {
         return yourTableNameService.delById(id);
     }
 
@@ -195,7 +202,7 @@ public class YourTableNameController {
     */
     @ApiOperation("批量删除")
     @PutMapping("/delBatchByIdList")
-    public BaseResponseDto delBatchByIdList(@RequestBody List ids) {
+    public Result delBatchByIdList(@RequestBody List ids) {
         return yourTableNameService.delBatchByIdList(ids);
     }
 
@@ -204,7 +211,7 @@ public class YourTableNameController {
     */
     @ApiOperation("分页列表查询")
     @PostMapping("/page/{pageNum}/{pageSize}")
-    public BaseResponseDto page(
+    public Result page(
         @RequestBody YourTableNameDto yourTableName,
         @ApiParam(name = "pageNum", value = "页码") @PathVariable int pageNum,
         @ApiParam(name = "pageSize", value = "每页数量") @PathVariable int pageSize

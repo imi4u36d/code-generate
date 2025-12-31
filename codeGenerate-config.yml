@@ -17,7 +17,7 @@ swaggerConfig:
 
 outputConfig:
   baseOutputDir: /Users/wangzhuo/Downloads/code
-  authorInfo: wz
+  authorInfo: noWork.fun
   packageUrl: com.imi4u36d
   overwriteEnable: true
 

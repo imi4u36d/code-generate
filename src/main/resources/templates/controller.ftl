@@ -3,7 +3,6 @@ package ${packageUrl};
 
 import com.github.pagehelper.PageInfo;
 import ${entityUrl}.${entityName};
-import ${dtoUrl}.BaseResponseDto;
 import ${dtoUrl}.${entityName}Dto;
 import ${serviceUrl}.${entityName}Service;
 import org.springframework.lang.Nullable;
@@ -12,7 +11,8 @@ import org.springframework.web.bind.annotation.*;
 <#if customProperties?? && customProperties.returnObject??>
 import ${customProperties.returnObject.packagePath};
 <#else>
-import com.nowork.utils.Result;
+import ${packageUrl}.Result;
+import ${packageUrl}.BaseResponseDto;
 </#if>
 <#if swaggerEnable == true>
 import io.swagger.annotations.Api;
