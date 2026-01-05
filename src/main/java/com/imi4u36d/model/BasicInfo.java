@@ -118,6 +118,16 @@ public class BasicInfo {
     private Boolean lombokEnable;
 
     /**
+     * API文档类型: swagger, openapi, asyncapi
+     */
+    private String apiDocType;
+
+    /**
+     * API文档版本
+     */
+    private String apiDocVersion;
+
+    /**
      * 自定义分层后缀
      */
     private String controllerSuffix = "Controller";
@@ -147,6 +157,8 @@ public class BasicInfo {
         this.swaggerEnable = basicInfo.getSwaggerEnable();
         this.overWriteEnable = basicInfo.getOverWriteEnable();
         this.lombokEnable = basicInfo.getLombokEnable();
+        this.apiDocType = basicInfo.getApiDocType();
+        this.apiDocVersion = basicInfo.getApiDocVersion();
         this.controllerSuffix = basicInfo.getControllerSuffix();
         this.serviceSuffix = basicInfo.getServiceSuffix();
         this.serviceImplSuffix = basicInfo.getServiceImplSuffix();

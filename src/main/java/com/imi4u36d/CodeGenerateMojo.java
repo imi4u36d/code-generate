@@ -184,6 +184,8 @@ public class CodeGenerateMojo extends AbstractMojo {
                     .utilUrl(utilUrl)
                     .resUrl(resUrl)
                     .swaggerEnable((Boolean) apiDocEnable)
+                    .apiDocType(apiDocType)
+                    .apiDocVersion(apiDocVersion)
                     .overWriteEnable(overwriteEnable)
                     .lombokEnable(lombokEnable);
 
